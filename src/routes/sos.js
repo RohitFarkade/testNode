@@ -213,7 +213,7 @@ router.post('/savecontacts', async (req, res) => {
                 }
             } else {
                 // If contact doesn't exist, create a new one
-                existingContact = new Contact({ userIds: [userId], name: contact.name, phone: contact.phone });
+                existingContact = new Contact({ userId: [userId], name: contact.name, phone: contact.phone });
                 await existingContact.save();
             }
 
