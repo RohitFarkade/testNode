@@ -197,6 +197,35 @@ class AuthController {
     }
 
     // Add multiple contacts
+    // static async addMultipleContacts(req, res) {
+    //     try {
+    //         const { userId, contacts } = req.body;
+
+    //         if (!contacts || contacts.length === 0) {
+    //             return res.status(400).json({ message: 'No contacts provided' });
+    //         }
+
+    //         const user = await User.findById(userId);
+    //         if (!user) {
+    //             return res.status(404).json({ message: 'User not found' });
+    //         }
+
+    //         // Prefix "+91" to phone numbers if not already present
+    //         const updatedContacts = contacts.map(contact => ({
+    //             name: contact.name,
+    //             phone: contact.phone.startsWith('+91') ? contact.phone : `+91${contact.phone}`,
+    //         }));
+
+    //         user.contacts.push(...updatedContacts);
+    //         await user.save();
+
+    //         res.status(200).json({ message: 'Contacts added successfully', data: user.contacts });
+    //     } catch (error) {
+    //         res.status(500).json({ message: 'Error adding contacts', error: error.message });
+    //     }
+    // }
+
+
     static async addMultipleContacts(req, res) {
         try {
             const { userId, contacts } = req.body;
@@ -206,17 +235,15 @@ class AuthController {
             }
 
             const user = await User.findById(userId);
+
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            // Prefix "+91" to phone numbers if not already present
-            const updatedContacts = contacts.map(contact => ({
-                name: contact.name,
-                phone: contact.phone.startsWith('+91') ? contact.phone : `+91${contact.phone}`,
-            }));
+            // Add contacts to the user's contacts array
+            user.contacts.push(...contacts);
 
-            user.contacts.push(...updatedContacts);
+            // Save updated user document
             await user.save();
 
             res.status(200).json({ message: 'Contacts added successfully', data: user.contacts });
@@ -224,6 +251,7 @@ class AuthController {
             res.status(500).json({ message: 'Error adding contacts', error: error.message });
         }
     }
+
 
     // Fetch user contacts
     static async getContacts(req, res) {
