@@ -200,27 +200,32 @@ router.post('/savecontacts', async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found!' });
         }
-
         const savedContacts = [];
         for (const contact of contacts) {
             let existingContact = await Contact.findOne({ phone: contact.phone });
-
+    
             if (existingContact) {
-                // If contact exists, add the userId to userIds array if not already present
+                if (!Array.isArray(existingContact.userIds)) {
+                    existingContact.userIds = [];
+                }
                 if (!existingContact.userIds.includes(userId)) {
                     existingContact.userIds.push(userId);
                     await existingContact.save();
                 }
             } else {
-                // If contact doesn't exist, create a new one
-                existingContact = new Contact({ userId: [userId], name: contact.name, phone: contact.phone });
+                existingContact = new Contact({
+                    userIds: [userId], // Matches the schema
+                    name: contact.name,
+                    phone: contact.phone
+                });
                 await existingContact.save();
             }
-
+    
             savedContacts.push(existingContact);
         }
-
+    
         res.status(201).json({ message: 'Contacts saved successfully!', savedContacts });
+        
     } catch (error) {
         console.error('Error saving contacts:', error.message);
         res.status(500).json({ message: 'Error saving contacts!', error: error.message });
