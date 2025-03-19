@@ -147,8 +147,48 @@ const validatePhoneNumber = (phone) => {
 };
 
 // Save contacts for a user
+// router.post('/savecontacts', async (req, res) => {
+//     const { userId, contacts } = req.body; // 'contacts' is an array of objects: [{ name, phone }]
+
+//     if (!Array.isArray(contacts) || contacts.length === 0) {
+//         return res.status(400).json({ message: 'Contacts array is empty or invalid!' });
+//     }
+
+//     try {
+//         // Check if user exists
+//         const user = await User.findById(userId);
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found!' });
+//         }
+
+//         // Validate and save each contact
+//         const savedContacts = [];
+//         for (const contact of contacts) {
+//             if (!validatePhoneNumber(contact.phone)) {
+//                 return res.status(400).json({ message: `Invalid phone number format: ${contact.phone}` });
+//             }
+
+//             const newContact = new Contact({ userId, name: contact.name, phone: contact.phone });
+//             try {
+//                 await newContact.save();
+//                 savedContacts.push(newContact);
+//             } catch (error) {
+//                 if (error.code === 11000) {
+//                     return res.status(400).json({ message: `Phone number already exists for this user: ${contact.phone}` });
+//                 }
+//                 throw error;
+//             }
+//         }
+
+//         res.status(201).json({ message: 'Contacts saved successfully!', savedContacts });
+//     } catch (error) {
+//         console.error('Error saving contacts:', error.message);
+//         res.status(500).json({ message: 'Error saving contacts!', error: error.message });
+//     }
+// });
+// Save contacts for a user
 router.post('/savecontacts', async (req, res) => {
-    const { userId, contacts } = req.body; // 'contacts' is an array of objects: [{ name, phone }]
+    const { userId, contacts } = req.body; // contacts: [{ name, phone }]
 
     if (!Array.isArray(contacts) || contacts.length === 0) {
         return res.status(400).json({ message: 'Contacts array is empty or invalid!' });
@@ -161,23 +201,23 @@ router.post('/savecontacts', async (req, res) => {
             return res.status(404).json({ message: 'User not found!' });
         }
 
-        // Validate and save each contact
         const savedContacts = [];
         for (const contact of contacts) {
-            if (!validatePhoneNumber(contact.phone)) {
-                return res.status(400).json({ message: `Invalid phone number format: ${contact.phone}` });
+            let existingContact = await Contact.findOne({ phone: contact.phone });
+
+            if (existingContact) {
+                // If contact exists, add the userId to userIds array if not already present
+                if (!existingContact.userIds.includes(userId)) {
+                    existingContact.userIds.push(userId);
+                    await existingContact.save();
+                }
+            } else {
+                // If contact doesn't exist, create a new one
+                existingContact = new Contact({ userIds: [userId], name: contact.name, phone: contact.phone });
+                await existingContact.save();
             }
 
-            const newContact = new Contact({ userId, name: contact.name, phone: contact.phone });
-            try {
-                await newContact.save();
-                savedContacts.push(newContact);
-            } catch (error) {
-                if (error.code === 11000) {
-                    return res.status(400).json({ message: `Phone number already exists for this user: ${contact.phone}` });
-                }
-                throw error;
-            }
+            savedContacts.push(existingContact);
         }
 
         res.status(201).json({ message: 'Contacts saved successfully!', savedContacts });
@@ -186,7 +226,6 @@ router.post('/savecontacts', async (req, res) => {
         res.status(500).json({ message: 'Error saving contacts!', error: error.message });
     }
 });
-
 // Send SOS to all contacts
 router.post('/sendsos', async (req, res) => {
     const { userId, latitude, longitude } = req.body;
